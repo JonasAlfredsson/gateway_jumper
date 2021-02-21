@@ -50,10 +50,10 @@ expect {
     eof { err_print "Received unexpected EOF" }
     "^\\\[local sudo\\\] Password:" {
         if { "x${local_pass}" == "x" } { err_print "Local sudo password needed but not given" }
-        send -- "${local_pass}\n"
+        send -- "${local_pass}\r"
     }
     "^?assword:" {
-        send -- "${jump_pass}\n"
+        send -- "${jump_pass}\r"
     }
 }
 
@@ -66,7 +66,7 @@ if { "x${local_pass}" != "x" } {
         timeout { err_print "Timed out waiting for jumphost password prompt" }
         eof { err_print "Received unexpected EOF" }
         "?assword:" {
-            send -- "${jump_pass}\n"
+            send -- "${jump_pass}\r"
         }
     }
 }
@@ -84,7 +84,7 @@ expect {
 
         # Get the most current TOTP challenge response code.
         set otp [exec oathtool -b --totp "$totp_secret"]
-        send -- "${otp}\n"
+        send -- "${otp}\r"
     }
 }
 
@@ -95,7 +95,7 @@ if { "x${dest_pass}" != "x" } {
         timeout { err_print "Timed out waiting for destination host password prompt" }
         eof { err_print "Received unexpected EOF" }
         "?assword:" {
-            send -- "${dest_pass}\n"
+            send -- "${dest_pass}\r"
         }
         "client: Connected." { err_print "Expected password prompt on destination host but got connected; aborting for safety" }
     }
