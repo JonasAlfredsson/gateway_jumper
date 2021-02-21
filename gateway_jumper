@@ -1,0 +1,127 @@
+#!/usr/bin/expect -f
+# A script used to automatically complete the interactive process of entering
+# passwords and a TOTP code when setting up a SSH connection. Add the necessary
+# information below and then let the script do all the hard work.
+#
+# Requirements: sudo apt install expect oathtool
+#
+# Usage: ./gateway_jumper <destination_host>
+#
+########################### User Configurable Values ###########################
+#-- Write the local sudo password if needed, will be skipped if empty.
+set local_pass ""
+
+#-- A password for the jumphost is needed, as well as the TOTP secret key used
+#   for creating the challenge response.
+set jump_pass ""
+set totp_secret ""
+
+#-- A password for the destination machine might be needed as well. Will be
+#   skipped if empty (e.g. keybased authentication is used here instead).
+set dest_pass ""
+
+# Use the "spawn" command to start the process which we will automate. Add any
+# extra sshuttle parameters that you like (which do not break the order of
+# events which will be expected by this script).
+spawn sshuttle --dns -r [lindex $argv 0] 10.0.0.0/8 172.16.0.0/12
+################################################################################
+
+# Helper function to print an informative message to the user.
+proc print { MSG } {
+    send_user "\n** ${MSG}\n"
+}
+
+# Helper function for printing an error message in red and then exiting.
+proc err_print { MSG } {
+    send_user "\n\033\[1;31m** ${MSG}\033\[0;0m\n"
+    exit 1
+}
+
+# Some small sanity checks to begin with.
+if { "x${jump_pass}" == "x" } { err_print "Password for the jumphost is needed, but is empty" }
+if { "x${totp_secret}" == "x" } { err_print "TOTP secret key is needed, but is empty" }
+
+
+# Wait for first password prompt, it may be either the local sudo prompt or the
+# prompt at the jumphost.
+print "Waiting for first password prompt"
+expect {
+    timeout { err_print "Timed out waiting for first password prompt" }
+    eof { err_print "Received unexpected EOF" }
+    "^\\\[local sudo\\\] Password:" {
+        if { "x${local_pass}" == "x" } { err_print "Local sudo password needed but not given" }
+        send -- "${local_pass}\n"
+    }
+    "^?assword:" {
+        send -- "${jump_pass}\n"
+    }
+}
+
+# If the first prompt was not for entering the local sudo password we can just
+# skip this part, as it should have been handled above.
+if { "x${local_pass}" != "x" } {
+    print "Waiting for jumphost password prompt"
+    expect {
+        "Permission denied, please try again." { err_print "Wrong password" }
+        timeout { err_print "Timed out waiting for jumphost password prompt" }
+        eof { err_print "Received unexpected EOF" }
+        "?assword:" {
+            send -- "${jump_pass}\n"
+        }
+    }
+}
+
+# Wait for TOTP prompt that should appear about now on the jumphost.
+print "Waiting the TOTP challenge prompt"
+expect {
+    "Permission denied, please try again." { err_print "Wrong password" }
+    timeout { err_print "Timed out waiting for TOTP prompt" }
+    eof { err_print "Received unexpected EOF" }
+    "Enter Your Microsoft verification code" {
+        # The receiver is usually not really ready when this prompt shows, so
+        # we need to wait a second here for it to actually accept our input.
+        sleep 1
+
+        # Get the most current TOTP challenge response code.
+        set otp [exec oathtool -b --totp "$totp_secret"]
+        send -- "${otp}\n"
+    }
+}
+
+# Wait for the password prompt on the destination host (if configured).
+if { "x${dest_pass}" != "x" } {
+    print "Waiting for destination host password prompt"
+    expect {
+        timeout { err_print "Timed out waiting for destination host password prompt" }
+        eof { err_print "Received unexpected EOF" }
+        "?assword:" {
+            send -- "${dest_pass}\n"
+        }
+        "client: Connected." { err_print "Expected password prompt on destination host but got connected; aborting for safety" }
+    }
+}
+
+print "Waiting for final connection to destination host"
+expect {
+    "Permission denied, please try again." { err_print "Wrong password" }
+    timeout { err_print "Timed out waiting for final connection to destination host" }
+    eof { err_print "Received unexpected EOF" }
+    "Enter Your Microsoft verification code" {
+        # If we get to here we failed to give the correct OTP response on the
+        # jumphost, which would then have returned us to the first password
+        # prompt again. However, the order of identifying prompts are the same
+        # up until now.
+        err_print "The OTP code '${otp}' was not accepted"
+    }
+    "?assword:" {
+        err_print "Unexpected password prompt; most likely reason is that the TOTP code '${otp}' was not accepted"
+    }
+    "client: Connected."
+}
+
+# We cannot just exit this script, since any spawned process will be killed
+# (even if sshuttle is running in daemon mode), so just let this one follow the
+# log output.
+print "Connection to destination host established; giving back interactive control to you"
+print "Press CTRL+C to close to disconnect"
+interact
