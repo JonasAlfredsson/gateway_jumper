@@ -65,6 +65,7 @@ if { "x${local_pass}" != "x" } {
         "Permission denied, please try again." { err_print "Wrong password" }
         timeout { err_print "Timed out waiting for jumphost password prompt" }
         eof { err_print "Received unexpected EOF" }
+        "Enter Your Microsoft verification code" { err_print "Local sudo password is set but was never used" }
         "?assword:" {
             send -- "${jump_pass}\r"
         }
