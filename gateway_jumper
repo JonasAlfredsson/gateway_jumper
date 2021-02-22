@@ -84,7 +84,7 @@ expect {
         sleep 1
 
         # Get the most current TOTP challenge response code.
-        set otp [exec oathtool --base32 --totp "$totp_secret"]
+        set otp [exec oathtool --base32 --totp "${totp_secret}"]
         send -- "${otp}\r"
     }
 }
