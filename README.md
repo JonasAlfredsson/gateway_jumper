@@ -1,6 +1,6 @@
 # gateway_jumper
 
-An Expect script used to automate the interactive process of entering
+An Expect script used to automate the otherwise interactive process of entering
 passwords and a TOTP code, when setting up a sshuttle connection to a
 destination host via a jumphost, if no other authentication options are
 available.
@@ -16,12 +16,15 @@ Enter Your Microsoft verification code <totp_response>
 Password: <dest_pass>
 ```
 
+> :warning: Passwords are currently stored in plain text, so make sure this
+            script is only readable by you.
+
 
 
 # Requirements
 
 You will need to have [Expect][1], [oathtool][2] and [sshuttle][3] installed in
-order for this script to work. Here is a oneliner to install them on Debian 10
+order for this script to work. Here is a one-liner to install them on Debian 10
 Buster:
 
 ```bash
@@ -73,17 +76,19 @@ At the top of the [`gateway_jumper`](./gateway_jumper) script there are four
 variables which needs to be properly configured:
 
 1. `local_pass`\
-   The password for invoking sudo on the local computer. Set to empty string
-   (`""`) if no password is needed for local sudo.
+   The password for invoking sudo on the local computer.\
+   Set to empty string (`""`) if no password is needed for local sudo.
 2. `jump_pass`\
    This need to be set to a non-empty string, since the jumphost should require
    a password.
 3. `totp_secret`\
     This is the Base32 secret key used to create the TOTP challenge response
-    code. Example: "ABCDE12FG3HIJ45K".
+    code. \
+    Example: "ABCDE12FG3HIJ45K"
 4. `dest_pass`\
-    The password on the final destination host. Set to empty string (`""`) if
-    no password is needed (e.g. key-based authentication is used).
+    The password on the final destination host.\
+    Set to empty string (`""`) if no password is needed (e.g. key-based
+    authentication is used).
 
 ### Test the Connection
 Before running this automatic script I **strongly** suggest manually connecting
@@ -119,7 +124,7 @@ you want to use it should be easy to add this on the
 You are also not limited to only running `sshuttle`, you could change the
 command after the "spawn" to any command which would cause the same prompts
 as mentioned [in the beginning](#gateway_jumper) to appear and still use this
-script. Or use this as a base to automate you own special case.
+script. Or you can use this script as a start to automate you own special case.
 
 ### (Optional) Add this Script to `$PATH`
 If you want to be able to call this script from anywhere on your system you can
