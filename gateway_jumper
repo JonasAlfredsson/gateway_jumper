@@ -98,7 +98,7 @@ if { "x${dest_pass}" != "x" } {
         "?assword:" {
             send -- "${dest_pass}\r"
         }
-        "client: Connected." { err_print "Expected password prompt on destination host but got connected; aborting for safety" }
+        -re "(c :|client:) Connected" { err_print "Expected password prompt on destination host but got connected; aborting for safety" }
     }
 }
 
@@ -117,7 +117,7 @@ expect {
     "?assword:" {
         err_print "Unexpected password prompt; most likely reason is that the TOTP code '${otp}' was not accepted"
     }
-    "client: Connected."
+    -re "(c :|client:) Connected"
 }
 
 # We cannot just exit this script, since any spawned process will be killed
