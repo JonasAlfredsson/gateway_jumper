@@ -52,7 +52,7 @@ expect {
         if { "x${local_pass}" == "x" } { err_print "Local sudo password needed but not given" }
         send -- "${local_pass}\r"
     }
-    "^?assword:" {
+    "?assword:" {
         send -- "${jump_pass}\r"
     }
 }
