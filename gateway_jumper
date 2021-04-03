@@ -1,24 +1,24 @@
 #!/usr/bin/expect -f
 # A script used to automatically complete the interactive process of entering
-# passwords and a TOTP code when setting up a SSH connection. Add the necessary
-# information below and then let the script do all the hard work.
+# passwords and a TOTP code when setting up a SSH connection. Define the
+# necessary environment variables and then let the script do all the hard work.
 #
 # Requirements: sudo apt install expect oathtool sshuttle
 #
 # Usage: ./gateway_jumper <destination_host>
 #
 ########################### User Configurable Values ###########################
-#-- Write the local sudo password if needed, will be skipped if empty.
-set local_pass ""
+#-- Read the local sudo password if needed, will be skipped if empty.
+set local_pass $env(GWJ_LOCAL_PASS)
 
 #-- A password for the jumphost is needed, as well as the TOTP secret key used
 #   for creating the challenge response.
-set jump_pass ""
-set totp_secret ""
+set jump_pass $env(GWJ_JUMP_PASS)
+set totp_secret $env(GWJ_TOTP_SECRET)
 
 #-- A password for the destination machine might be needed as well. Will be
 #   skipped if empty (e.g. keybased authentication is used here instead).
-set dest_pass ""
+set dest_pass $env(GWJ_DEST_PASS)
 
 # Use the "spawn" command to start the process which we will automate. Add any
 # extra sshuttle parameters that you like (which do not break the order of
