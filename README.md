@@ -10,14 +10,14 @@ available.
 ```
 sshuttle -r <destination_host>
 
-[local sudo] Password: <local_pass>
-Password: <jump_pass>
+[local sudo] Password: <GWJ_LOCAL_PASS>
+Password: <GWJ_JUMP_PASS>
 Enter Your Microsoft verification code <totp_response>
-Password: <dest_pass>
+Password: <GWJ_DEST_PASS>
 ```
 
-> :warning: Passwords are currently stored in plain text, so make sure this
-            script is only readable by you.
+> :warning: Passwords need to be defined in plain text in their corresponding
+            environment variables, so be a little bit careful with this.
 
 
 
@@ -73,19 +73,21 @@ Here you need to change at least the `username`, `jumphost.org` and
 
 ### Configure this Script
 At the top of the [`gateway_jumper`](./gateway_jumper) script there are four
-variables which needs to be properly configured:
+variables which needs to be properly configured. This can either be done by
+setting the environment variables mentioned below, or by just replacing the
+`$env(*)` reader functions inside the file with the correct values directly.
 
-1. `local_pass`\
+1. `GWJ_LOCAL_PASS`\
    The password for invoking sudo on the local computer.\
    Set to empty string (`""`) if no password is needed for local sudo.
-2. `jump_pass`\
+2. `GWJ_JUMP_PASS`\
    This need to be set to a non-empty string, since the jumphost should require
    a password.
-3. `totp_secret`\
+3. `GWJ_TOTP_SECRET`\
     This is the Base32 secret key used to create the TOTP challenge response
     code. \
     Example: "ABCDE12FG3HIJ45K"
-4. `dest_pass`\
+4. `GWJ_DEST_PASS`\
     The password on the final destination host.\
     Set to empty string (`""`) if no password is needed (e.g. key-based
     authentication is used).
@@ -113,7 +115,7 @@ and `4` in the list [above](#configure-this-script) would have returned. To
 generate a TOTP response you can run the following command:
 
 ```bash
-oathtool --base32 --totp "${totp_secret}"
+oathtool --base32 --totp "${GWJ_TOTP_SECRET}"
 ```
 
 ### (Optional) Edit the `sshuttle` Command
